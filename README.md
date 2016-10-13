@@ -10,11 +10,30 @@ npm install think-template-dot
 
 ### 注册 adapter
 
-```
 // src/bootstrap/adapter.js
 import doTAdapter from 'think-template-dot';
+
+doTAdapter.reconfig(def, dot) {
+  def.env = 'product';
+  def.xx = xxx;
+
+  dot.filter.filter1 = function() {};
+};
+
 think.adapter('template', 'dot', doTAdapter);
-```
+
+#### doTAdapter.reconfig 
+
+函数接受两个参数：
+- def: 替换doT模板的compile阶段参数def
+- dot: 替换doT模板的run-time阶段使用的global.dot对象
+
+提供这个函数有2个目的：
+1. thinkjs推荐的在`view.js`的`adapter`中配置`prerender`函数的方式，在每次页面请求渲染时都会被调用，效率不高
+2. 启用`cache_compile`缓存后，会缓存dot经过compile之后的模板，在执行compile之前，将一些短时间内不会变的系统参数通过本函数存入def中，在页面渲染时根据def参数生成对应的模板缓存，之后再次有页面渲染请求，直接取用缓存即可，提高页面渲染效率。**本函数被调用后，由于def变量会被修改，所以会清空模板的缓存数据**
+
+> 推荐在配置中开启`cache_compile`，并且在模板编写时，根据业务情况，区分哪些是与用户无关切不频繁变更的数据，将这些数据提前存入def变量中，并在模板中通过`{{# }}`这样的compile时变量插入，能进一步提高渲染效率
+
 
 ### 配置 view
 
@@ -28,10 +47,10 @@ export default {
     root_path: think.ROOT_PATH + '/view',
     adapter: {
         dot: {
-            strip: false,
+            cache_compile: true, // 启用模板缓存
+            strip: false, // 禁用dot模板的strip功能
             prerender: function(doT, def, dot){
                 dot.filter.filter1 = function() {};
-                
             }
         }
     }
@@ -57,6 +76,13 @@ adapter.dot中可以配置doT模板的templateSettings。
   selfcontained: false
 }
 ```
+
+#### adapter.dot.cache_compile
+
+配置dot模板启用缓存。dot模板本身的渲染分为compile和run-time两个阶段，这里缓存的是compile之后的内容，即`doT.template(template, optioin, def)`之后的内容。  
+
+由于thinkJs的视图功能不区分这两个阶段，所以在compile阶段时，def没办法实时传参。因此提供了`doTAdapter.reconfig`方法来进行统一配置。事例参考上面的**注册 adapter**
+
 
 #### adapter.dot.prerender
 
