@@ -13,7 +13,7 @@ npm install think-template-dot
 // src/bootstrap/adapter.js
 import doTAdapter from 'think-template-dot';
 
-doTAdapter.reconfig(def, dot) {
+doTAdapter.reconfig(def, ‘home/index_index.html’) {
   def.env = 'product';
   def.xx = xxx;
 
@@ -22,18 +22,25 @@ doTAdapter.reconfig(def, dot) {
 
 think.adapter('template', 'dot', doTAdapter);
 
-#### doTAdapter.reconfig 
+#### doTAdapter.reconfig(def[, templateFile])
 
-函数接受两个参数：
+配置模板的编译时变量或全局模板变量。变量在doT模板的编译阶段传入，通过{{# }} 和 {{## #}} 方式使用。
+
+参数说明：
 - def: 替换doT模板的compile阶段参数def
-- dot: 替换doT模板的run-time阶段使用的global.dot对象
+- templateFile: 替换的参数def的目标模板(值为空时，则替换掉的是全局的global.dot对象)
+
+> reconfig函数被调用后，会清空已经缓存的templateFile模板。如果reconfig函数第二个参数为空，则会清空缓存的全部模板
 
 提供这个函数有2个目的：
 1. thinkjs推荐的在`view.js`的`adapter`中配置`prerender`函数的方式，在每次页面请求渲染时都会被调用，效率不高
-2. 启用`cache_compile`缓存后，会缓存dot经过compile之后的模板，在执行compile之前，将一些短时间内不会变的系统参数通过本函数存入def中，在页面渲染时根据def参数生成对应的模板缓存，之后再次有页面渲染请求，直接取用缓存即可，提高页面渲染效率。**本函数被调用后，由于def变量会被修改，所以会清空模板的缓存数据**
+2. 启用`cache_compile`缓存后，会缓存dot经过compile之后的模板，在执行compile之前，将一些短时间内不会变的系统参数通过本函数存入def中，在页面渲染时根据def参数生成对应的模板缓存，之后再次有页面渲染请求，直接取用缓存即可，提高页面渲染效率。**本函数被调用后，由于def变量会被修改，所以会清空上次缓存的该模板**
 
 > 推荐在配置中开启`cache_compile`，并且在模板编写时，根据业务情况，区分哪些是与用户无关切不频繁变更的数据，将这些数据提前存入def变量中，并在模板中通过`{{# }}`这样的compile时变量插入，能进一步提高渲染效率
 
+#### doTAdapter.getConfig(templateFile)
+
+获取制定模板的编译时变量
 
 ### 配置 view
 
